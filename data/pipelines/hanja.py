@@ -1,17 +1,18 @@
 """한자 데이터 파이프라인의 구현체인 HanjaDataPipeline이 정의된 모듈입니다."""
 
 
+import os
 import io
 import logging
 from typing import NoReturn
 
 from PIL import Image
 
-from dtos import Artwork
-from dtos import Hanja
-from utils.image_module import recognize_optical_character, crop_image_to_box
-from utils.hanja_module import get_huneums
-from client.google_client import StorageClient
+from data.dtos import Artwork
+from data.dtos import Hanja
+from data.utils.image_module import recognize_optical_character, crop_image_to_box
+from data.utils.hanja_module import get_huneums
+from data.client.google_client import StorageClient
 
 
 class HanjaDataPipeline:
@@ -22,7 +23,7 @@ class HanjaDataPipeline:
         self.hanjas = []  # list[Hanja]
         self.tesseract_lang = 'chi_tra+chi_tra_vert+chi_sim+chi_sim_vert'
         self.storage_client = StorageClient()
-        self.hanja_bucket = 'cali-hanja-image'
+        self.hanja_bucket = os.getenv('HANJA_BUCKET')
 
     def upload_hanja_to_bucket(self, hanja: Hanja) -> NoReturn:
         """Hanja 데이터를 GCS 버킷에 업로드합니다."""
@@ -33,7 +34,9 @@ class HanjaDataPipeline:
         bucket = self.hanja_bucket
 
         # 흙/토/안진경_다보탑비.webp
-        file_name = f'{hanja.from_artist}_{hanja.from_artwork}.webp'
+        file_name = '/'.join([hanja.huneums[0]['def'],
+                              hanja.huneums[0]['kor'],
+                             f'{hanja.from_artist}_{hanja.from_artwork}.webp'])
 
         self.storage_client.insert_bytes_object_into_bucket(
             fd=buf,
@@ -67,7 +70,7 @@ class HanjaDataPipeline:
 
         for artwork in self.artworks:
             for image_stream in artwork.image_streams:
-                image = Image.open(image_stream)
+                image = Image.open(image_stream['image_stream'])
                 boxes = recognize_optical_character(image, self.tesseract_lang)
 
                 for box in boxes.splitlines():

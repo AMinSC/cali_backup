@@ -8,14 +8,14 @@ from googleapiclient.http import MediaIoBaseDownload
 from googleapiclient.http import MediaIoBaseUpload
 from googleapiclient.errors import HttpError
 
-from dtos import Artwork
-from utils.image_module import convert_stream_to_webp
+from data.dtos import Artwork
+from data.utils.image_module import convert_stream_to_webp
 
 
 class ArtworkDataPipeline:
     def __init__(self) -> None:
         self.spreadsheet_id = os.getenv('SPREADSHEET_ID')
-        self.service_account_file = 'service_account_key.json'
+        self.service_account_file = os.getenv('SERVICE_ACCOUNT_FILE')
         self.creds = Credentials.from_service_account_file(
             self.service_account_file)
 
@@ -107,7 +107,7 @@ class ArtworkDataPipeline:
             ])
 
             self.storage_service.objects().insert(  # pylint: disable=no-member
-                bucket='cali-artwork-image',
+                bucket=os.getenv('ARTWORK_BUCKET'),
                 media_body=uploader,
                 body={
                     'name': file_name_with_path
