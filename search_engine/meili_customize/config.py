@@ -29,7 +29,8 @@ class Config:
     def __init__(self):
         load_dotenv()
         self.client = meilisearch.Client(
-            'http://localhost:7700', os.getenv('MEILI_MASTER_KEY'))
+            'http://cali-search-server-m-1:7700',
+            os.getenv('MEILI_MASTER_KEY'))
         self.index = self.client.index('chi')
         self._initialize_index()
 
